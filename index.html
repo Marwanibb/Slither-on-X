@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="twitter:card" content="player">
+  <meta name="twitter:title" content="Slither X">
+  <meta name="twitter:description" content="Play Slither X">
+  <meta name="twitter:player" content="https://YOUR-DOMAIN.vercel.app/">
+  <meta name="twitter:player:width" content="720">
+  <meta name="twitter:player:height" content="405">
+  <title>Slither X</title>
+  <style>
+    *{box-sizing:border-box}
+    html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#070b14;font-family:Inter,Arial,sans-serif;color:#fff}
+    #game{position:fixed;inset:0}
+    #menu{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;background:radial-gradient(circle at center,#17203a 0,#080b14 55%,#03050a 100%);z-index:5}
+    .panel{width:min(420px,92vw);padding:30px;border:1px solid #29334d;border-radius:22px;background:rgba(10,15,28,.92);box-shadow:0 20px 70px #0008;text-align:center}
+    h1{font-size:42px;margin:0 0 8px;letter-spacing:-2px}
+    p{color:#aab4c9;margin:0 0 24px}
+    input{width:100%;padding:14px 15px;border-radius:12px;border:1px solid #36425f;background:#11192b;color:#fff;font-size:16px;outline:none}
+    .row{display:flex;gap:12px;margin-top:12px}
+    input[type=color]{height:48px;padding:4px;flex:0 0 64px}
+    button{width:100%;padding:14px;border:0;border-radius:12px;background:#fff;color:#080b14;font-weight:800;font-size:16px;cursor:pointer;margin-top:14px}
+    #hud{position:fixed;left:18px;top:18px;z-index:2;display:none;padding:12px 15px;border:1px solid #ffffff18;border-radius:14px;background:#08101dcc;backdrop-filter:blur(8px)}
+    #hud b{font-size:18px}
+    #tip{position:fixed;left:50%;bottom:18px;transform:translateX(-50%);z-index:2;color:#aeb8cb;background:#08101dcc;border:1px solid #ffffff15;padding:9px 14px;border-radius:999px;font-size:13px}
+    #boost{position:fixed;right:20px;bottom:20px;z-index:3;width:86px;height:86px;border-radius:50%;background:#ffffff16;color:#fff;border:1px solid #ffffff30;display:none}
+  </style>
+</head>
+<body>
+<div id="game"></div>
+<div id="menu">
+  <div class="panel">
+    <h1>SLITHER X</h1>
+    <p>Grow bigger. Eat more. Don't crash.</p>
+    <input id="name" maxlength="14" placeholder="Your name" value="Player">
+    <div class="row">
+      <input id="color" type="color" value="#8b5cf6">
+      <button id="play">PLAY</button>
+    </div>
+  </div>
+</div>
+<div id="hud">Score: <b id="score">0</b> &nbsp; Length: <b id="length">12</b></div>
+<div id="tip">Move with your mouse • WASD also works • Hold boost</div>
+<button id="boost">BOOST</button>
+
+<script src="https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.min.js"></script>
+<script>
+const scene=new THREE.Scene();
+scene.background=new THREE.Color(0x070b14);
+const camera=new THREE.PerspectiveCamera(55,innerWidth/innerHeight,.1,2000);
+const renderer=new THREE.WebGLRenderer({antialias:true});
+renderer.setPixelRatio(Math.min(devicePixelRatio,2));
+renderer.setSize(innerWidth,innerHeight);
+document.getElementById('game').appendChild(renderer.domElement);
+
+scene.add(new THREE.HemisphereLight(0xbdd7ff,0x111522,2.2));
+const sun=new THREE.DirectionalLight(0xffffff,2.5); sun.position.set(20,40,20); scene.add(sun);
+
+const grid=new THREE.GridHelper(900,90,0x25304a,0x11182a);
+grid.position.y=-1.2; scene.add(grid);
+
+const arena=new THREE.Mesh(
+  new THREE.CircleGeometry(450,96),
+  new THREE.MeshBasicMaterial({color:0x09101e,transparent:true,opacity:.72,side:THREE.DoubleSide})
+);
+arena.rotation.x=-Math.PI/2; arena.position.y=-1.25; scene.add(arena);
+
+const food=[];
+const snakes=[];
+let player=null, running=false, mouseX=0,mouseY=0,keys={};
+let score=0;
+
+function rand(a,b){return a+Math.random()*(b-a)}
+function makeFood(){
+  const g=new THREE.SphereGeometry(.55,10,8);
+  const m=new THREE.MeshStandardMaterial({color:new THREE.Color().setHSL(Math.random(),.85,.6),emissive:0x222222});
+  const o=new THREE.Mesh(g,m);
+  o.position.set(rand(-400,400),0,rand(-400,400));
+  o.scale.setScalar(rand(.7,1.35));
+  scene.add(o); food.push(o);
+}
+for(let i=0;i<350;i++)makeFood();
+
+function makeSnake(name,color,isPlayer=false){
+  const s={name,color,isPlayer,parts:[],dir:new THREE.Vector3(1,0,0),target:new THREE.Vector3(1,0,0),speed:isPlayer?7:5.5,boost:false,dead:false,score:0};
+  const n=isPlayer?14:10;
+  for(let i=0;i<n;i++){
+    const geo=new THREE.SphereGeometry(isPlayer?.9:.82,16,12);
+    const mat=new THREE.MeshStandardMaterial({color});
+    const mesh=new THREE.Mesh(geo,mat);
+    mesh.position.set(isPlayer?0:rand(-250,250),0,isPlayer?0:rand(-250,250));
+    scene.add(mesh); s.parts.push(mesh);
+  }
+  s.head=s.parts[0];
+  s.head.scale.setScalar(1.12);
+  snakes.push(s);
+  return s;
+}
+
+function start(){
+  document.getElementById('menu').style.display='none';
+  document.getElementById('hud').style.display='block';
+  document.getElementById('boost').style.display='block';
+  player=makeSnake(document.getElementById('name').value||'Player',document.getElementById('color').value,true);
+  for(let i=0;i<9;i++)makeSnake(['Nova','Byte','Ghost','Mango','Orbit','Vex','Zed','Pixel','Ace'][i],new THREE.Color().setHSL(i/9,.8,.58).getHex());
+  running=true;
+}
+document.getElementById('play').onclick=start;
+document.getElementById('name').addEventListener('keydown',e=>{if(e.key==='Enter')start()});
+
+addEventListener('mousemove',e=>{
+  mouseX=(e.clientX/innerWidth-.5)*2;
+  mouseY=(e.clientY/innerHeight-.5)*2;
+});
+addEventListener('keydown',e=>{keys[e.key.toLowerCase()]=true;if(e.code==='Space')player&&(player.boost=true)});
+addEventListener('keyup',e=>{keys[e.key.toLowerCase()]=false;if(e.code==='Space')player&&(player.boost=false)});
+document.getElementById('boost').onpointerdown=()=>player&&(player.boost=true);
+document.getElementById('boost').onpointerup=()=>player&&(player.boost=false);
+
+function steerPlayer(s,dt){
+  let x=mouseX,z=mouseY;
+  if(keys.w||keys.arrowup)z=-1;
+  if(keys.s||keys.arrowdown)z=1;
+  if(keys.a||keys.arrowleft)x=-1;
+  if(keys.d||keys.arrowright)x=1;
+  const v=new THREE.Vector3(x,0,z);
+  if(v.lengthSq()>.02){v.normalize();s.target.lerp(v,.18)}
+  else s.target.lerp(s.dir,.1);
+  s.dir.lerp(s.target,Math.min(1,dt*5)).normalize();
+}
+
+function aiSteer(s){
+  if(Math.random()<.015){
+    s.target.set(rand(-1,1),0,rand(-1,1)).normalize();
+  }
+  const p=s.head.position;
+  if(Math.abs(p.x)>390||Math.abs(p.z)>390){
+    s.target.set(-p.x,0,-p.z).normalize();
+  }
+  s.dir.lerp(s.target,.025).normalize();
+}
+
+function updateSnake(s,dt){
+  if(s.dead)return;
+  if(s.isPlayer)steerPlayer(s,dt); else aiSteer(s);
+  const speed=s.speed*(s.boost?1.7:1);
+  s.head.position.addScaledVector(s.dir,speed*dt);
+  s.head.position.y=0;
+  s.head.rotation.y=Math.atan2(s.dir.x,s.dir.z);
+  for(let i=1;i<s.parts.length;i++){
+    const a=s.parts[i-1],b=s.parts[i];
+    const d=a.position.distanceTo(b.position);
+    const desired=.72;
+    if(d>desired){
+      const t=(d-desired)*Math.min(1,dt*18);
+      b.position.lerp(a.position,t);
+    }
+  }
+  const p=s.head.position;
+  if(p.length()>430) s.dead=true;
+}
+
+function eatFood(){
+  if(!player||player.dead)return;
+  for(let i=food.length-1;i>=0;i--){
+    if(player.head.position.distanceTo(food[i].position)<2.2){
+      scene.remove(food[i]); food.splice(i,1); makeFood();
+      score+=10;
+      document.getElementById('score').textContent=score;
+      if(score%50===0){
+        const geo=new THREE.SphereGeometry(.9,16,12);
+        const mat=new THREE.MeshStandardMaterial({color:player.color});
+        const tail=new THREE.Mesh(geo,mat);
+        tail.position.copy(player.parts[player.parts.length-1].position);
+        scene.add(tail); player.parts.push(tail);
+        document.getElementById('length').textContent=player.parts.length;
+      }
+    }
+  }
+}
+
+function collisions(){
+  if(!player||player.dead)return;
+  for(const s of snakes){
+    if(s===player||s.dead)continue;
+    for(let i=0;i<s.parts.length;i++){
+      if(player.head.position.distanceTo(s.parts[i].position)<1.35){player.dead=true;break}
+    }
+  }
+  for(let i=2;i<player.parts.length;i++){
+    if(player.head.position.distanceTo(player.parts[i].position)<1.1){player.dead=true;break}
+  }
+  if(player.dead){
+    setTimeout(()=>location.reload(),900);
+  }
+}
+
+const clock=new THREE.Clock();
+function animate(){
+  requestAnimationFrame(animate);
+  const dt=Math.min(clock.getDelta(),.035);
+  if(running){
+    for(const s of snakes)updateSnake(s,dt);
+    eatFood(); collisions();
+    const p=player.head.position;
+    const desired=new THREE.Vector3(p.x,25,p.z+28);
+    camera.position.lerp(desired,1-Math.pow(.001,dt));
+    camera.lookAt(p.x,0,p.z);
+  }else{
+    camera.position.set(0,55,45); camera.lookAt(0,0,0);
+  }
+  renderer.render(scene,camera);
+}
+animate();
+
+addEventListener('resize',()=>{
+  camera.aspect=innerWidth/innerHeight;
+  camera.updateProjectionMatrix();
+  renderer.setSize(innerWidth,innerHeight);
+});
+</script>
+</body>
+</html>
