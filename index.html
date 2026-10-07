@@ -30,6 +30,7 @@ button{border:0;border-radius:12px;background:#fff;color:#080b14;font-weight:800
 .rank{width:20px;color:#8792a8}.dot{width:9px;height:9px;border-radius:50%;flex:none}.nm{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.len{color:#aab4c8}
 #tip{position:fixed;left:50%;bottom:17px;transform:translateX(-50%);z-index:5;padding:8px 13px;border:1px solid #ffffff14;border-radius:999px;background:#07101dcc;color:#aab4c8;font-size:12px;white-space:nowrap}
 #boost{position:fixed;right:22px;bottom:22px;z-index:6;display:none;width:82px;height:82px;border-radius:50%;border:1px solid #ffffff35;background:#ffffff18;color:#fff}
+#music{position:fixed;right:16px;bottom:116px;z-index:6;display:none;padding:10px 13px;border:1px solid #ffffff25;border-radius:12px;background:#07101ddd;color:#fff;font-weight:800;cursor:pointer}
 #dead{position:fixed;inset:0;z-index:9;display:none;align-items:center;justify-content:center;background:#0009}
 .deadbox{padding:28px 35px;text-align:center;border:1px solid #ffffff20;border-radius:20px;background:#091020f2}.deadbox h2{margin:0 0 7px;font-size:32px}.deadbox p{color:#aab4c8}.deadbox button{padding:12px 22px}
 @media(max-width:650px){#leader{width:175px}.tip{display:none}#tip{font-size:11px}.panel{padding:25px}}
@@ -62,6 +63,7 @@ button{border:0;border-radius:12px;background:#fff;color:#080b14;font-weight:800
 
 <div id="tip">Mouse/WASD to steer • Hold Space or BOOST to accelerate</div>
 <button id="boost">BOOST</button>
+<button id="music" type="button">🔊 MUSIC</button>
 
 <div id="dead">
   <div class="deadbox">
@@ -125,10 +127,11 @@ function makeSnake(name,color,isPlayer=false,index=0){
  const count=isPlayer?12:Math.min(34,8+Math.floor(s.score/45));
  const startX=isPlayer?0:rand(-300,300),startZ=isPlayer?0:rand(-300,300);
  for(let i=0;i<count;i++){
-  const geo=new THREE.SphereGeometry(.86,14,11);
-  const mat=new THREE.MeshStandardMaterial({color});
+  const geo=new THREE.SphereGeometry(.86,18,12);
+  const mat=new THREE.MeshStandardMaterial({color,roughness:.72});
   const mesh=new THREE.Mesh(geo,mat);
-  mesh.position.set(startX-i*.78,startX*0,startZ);
+  mesh.scale.set(i===0?1.18:1, i===0?1.05:0.92, i===0?1.28:0.96);
+  mesh.position.set(startX-i*.78,0,startZ);
   scene.add(mesh);s.parts.push(mesh);
  }
  s.head=s.parts[0];s.head.scale.setScalar(1.12);
@@ -137,12 +140,50 @@ function makeSnake(name,color,isPlayer=false,index=0){
 
 const botNames=["Nova","Vex","Ghost","Mango","Orbit","Pixel","Zed","Byte","Ace","Rogue","Blitz","Nexus","Karma","Venom","Drift","Zero","Flux","Titan","Luna","Echo"];
 
+
+let musicOn=true;
+let audioCtx=null, musicGain=null, musicTimer=null, musicStep=0;
+
+// A built-in, original high-energy club loop. It does not contain the copyrighted
+// recording of "Pump It Up", but gives the game a similar energetic feel.
+const bass=[55,55,65.41,55,73.42,55,65.41,55];
+const lead=[220,261.63,293.66,329.63,293.66,261.63,220,196];
+function startMusic(){
+ if(audioCtx)return;
+ audioCtx=new (window.AudioContext||window.webkitAudioContext)();
+ musicGain=audioCtx.createGain(); musicGain.gain.value=.075; musicGain.connect(audioCtx.destination);
+ const tick=()=>{
+   if(!audioCtx)return;
+   const t=audioCtx.currentTime;
+   const b=audioCtx.createOscillator(), bg=audioCtx.createGain();
+   b.type='sawtooth'; b.frequency.value=bass[musicStep%bass.length];
+   bg.gain.setValueAtTime(.0001,t); bg.gain.exponentialRampToValueAtTime(.18,t+.015); bg.gain.exponentialRampToValueAtTime(.0001,t+.18);
+   b.connect(bg).connect(musicGain); b.start(t); b.stop(t+.2);
+   if(musicStep%2===0){
+     const l=audioCtx.createOscillator(), lg=audioCtx.createGain();
+     l.type='square'; l.frequency.value=lead[musicStep%lead.length];
+     lg.gain.setValueAtTime(.0001,t); lg.gain.exponentialRampToValueAtTime(.035,t+.01); lg.gain.exponentialRampToValueAtTime(.0001,t+.16);
+     l.connect(lg).connect(musicGain); l.start(t); l.stop(t+.18);
+   }
+   musicStep++;
+ };
+ tick(); musicTimer=setInterval(tick,220);
+}
+function toggleMusic(){
+ if(!audioCtx)startMusic();
+ musicOn=!musicOn;
+ if(musicGain)musicGain.gain.setTargetAtTime(musicOn?.075:0,audioCtx.currentTime,.03);
+ document.getElementById('music').textContent=musicOn?'🔊 MUSIC':'🔇 MUTED';
+}
+
 function start(){
  document.getElementById('menu').style.display='none';
  document.getElementById('dead').style.display='none';
  document.getElementById('hud').style.display='block';
  document.getElementById('leader').style.display='block';
  document.getElementById('boost').style.display='block';
+ document.getElementById('music').style.display='block';
+ startMusic();
  score=0;
  player=makeSnake(
    document.getElementById('name').value.trim()||'Player',
@@ -155,6 +196,7 @@ function start(){
  running=true;updateHUD();
 }
 document.getElementById('play').onclick=start;
+document.getElementById('music').onclick=toggleMusic;
 document.getElementById('again').onclick=()=>location.reload();
 document.getElementById('name').addEventListener('keydown',e=>{if(e.key==='Enter')start()});
 
@@ -223,6 +265,7 @@ function updateSnake(s,dt){
  s.head.position.addScaledVector(s.dir,sp*dt);
  s.head.position.y=0;
  s.head.rotation.y=Math.atan2(s.dir.x,s.dir.z);
+  if(s.eyes){for(const eye of s.eyes)eye.position.y=.42;}
 
  for(let i=1;i<s.parts.length;i++){
    const a=s.parts[i-1],b=s.parts[i];
