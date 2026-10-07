@@ -90,7 +90,9 @@ function makeSnake(name,color,isPlayer=false){
     const geo=new THREE.SphereGeometry(isPlayer?.9:.82,16,12);
     const mat=new THREE.MeshStandardMaterial({color});
     const mesh=new THREE.Mesh(geo,mat);
-    mesh.position.set(isPlayer?0:rand(-250,250),0,isPlayer?0:rand(-250,250));
+    const startX = isPlayer ? 0 : rand(-250,250);
+    const startZ = isPlayer ? 0 : rand(-250,250);
+    mesh.position.set(startX - i * .9, 0, startZ);
     scene.add(mesh); s.parts.push(mesh);
   }
   s.head=s.parts[0];
@@ -189,7 +191,7 @@ function collisions(){
       if(player.head.position.distanceTo(s.parts[i].position)<1.35){player.dead=true;break}
     }
   }
-  for(let i=2;i<player.parts.length;i++){
+  for(let i=5;i<player.parts.length;i++){
     if(player.head.position.distanceTo(player.parts[i].position)<1.1){player.dead=true;break}
   }
   if(player.dead){
