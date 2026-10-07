@@ -144,40 +144,88 @@ const botNames=["Nova","Vex","Ghost","Mango","Orbit","Pixel","Zed","Byte","Ace",
 
 
 let musicOn=true;
-let audioCtx=null, musicGain=null, musicTimer=null, musicStep=0;
-
-// A built-in, original high-energy club loop. It does not contain the copyrighted
-// recording of "Pump It Up", but gives the game a similar energetic feel.
-const bass=[55,55,65.41,55,73.42,55,65.41,55];
-const lead=[220,261.63,293.66,329.63,293.66,261.63,220,196];
+let audioCtx=null,musicGain=null,musicTimer=null,musicStep=0;
+const bass=[55,55,65.41,73.42,65.41,55,82.41,73.42];
+const chords=[[220,277.18,329.63],[196,246.94,293.66],[174.61,220,261.63],[196,246.94,329.63]];
+const lead=[440,523.25,659.25,587.33,523.25,440,392,523.25];
 function startMusic(){
- if(audioCtx)return;
- audioCtx=new (window.AudioContext||window.webkitAudioContext)();
- musicGain=audioCtx.createGain(); musicGain.gain.value=.075; musicGain.connect(audioCtx.destination);
+ if(audioCtx){if(audioCtx.state==='suspended')audioCtx.resume();return}
+ audioCtx=new(window.AudioContext||window.webkitAudioContext)();
+
+ const master=audioCtx.createGain();
+ master.gain.value=.42;
+ master.connect(audioCtx.destination);
+ musicGain=master;
+
+ const compressor=audioCtx.createDynamicsCompressor();
+ compressor.threshold.value=-18;
+ compressor.knee.value=12;
+ compressor.ratio.value=5;
+ compressor.attack.value=.003;
+ compressor.release.value=.12;
+ master.disconnect();
+ master.connect(compressor);
+ compressor.connect(audioCtx.destination);
+
  const tick=()=>{
-   if(!audioCtx)return;
-   const t=audioCtx.currentTime;
-   const b=audioCtx.createOscillator(), bg=audioCtx.createGain();
-   b.type='sawtooth'; b.frequency.value=bass[musicStep%bass.length];
-   bg.gain.setValueAtTime(.0001,t); bg.gain.exponentialRampToValueAtTime(.18,t+.015); bg.gain.exponentialRampToValueAtTime(.0001,t+.18);
-   b.connect(bg).connect(musicGain); b.start(t); b.stop(t+.2);
-   if(musicStep%2===0){
-     const l=audioCtx.createOscillator(), lg=audioCtx.createGain();
-     l.type='square'; l.frequency.value=lead[musicStep%lead.length];
-     lg.gain.setValueAtTime(.0001,t); lg.gain.exponentialRampToValueAtTime(.035,t+.01); lg.gain.exponentialRampToValueAtTime(.0001,t+.16);
-     l.connect(lg).connect(musicGain); l.start(t); l.stop(t+.18);
+  const t=audioCtx.currentTime;
+  const step=musicStep%16;
+
+  // Four-on-the-floor kick
+  if(step%4===0){
+   const k=audioCtx.createOscillator(),kg=audioCtx.createGain();
+   k.type='sine';
+   k.frequency.setValueAtTime(145,t);
+   k.frequency.exponentialRampToValueAtTime(45,t+.16);
+   kg.gain.setValueAtTime(.9,t);
+   kg.gain.exponentialRampToValueAtTime(.0001,t+.19);
+   k.connect(kg).connect(master);k.start(t);k.stop(t+.2);
+  }
+
+  // Off-beat bass
+  if(step%2===0){
+   const b=audioCtx.createOscillator(),bg=audioCtx.createGain();
+   b.type='sawtooth';b.frequency.value=bass[(step/2)%bass.length];
+   bg.gain.setValueAtTime(.0001,t);
+   bg.gain.exponentialRampToValueAtTime(.28,t+.01);
+   bg.gain.exponentialRampToValueAtTime(.0001,t+.25);
+   b.connect(bg).connect(master);b.start(t);b.stop(t+.27);
+  }
+
+  // Chord stab
+  if(step%4===2){
+   for(const freq of chords[Math.floor(musicStep/4)%chords.length]){
+    const c=audioCtx.createOscillator(),cg=audioCtx.createGain();
+    c.type='sawtooth';c.frequency.value=freq;
+    cg.gain.setValueAtTime(.0001,t);
+    cg.gain.exponentialRampToValueAtTime(.045,t+.008);
+    cg.gain.exponentialRampToValueAtTime(.0001,t+.23);
+    c.connect(cg).connect(master);c.start(t);c.stop(t+.25);
    }
-   musicStep++;
+  }
+
+  // Bright hook
+  const l=audioCtx.createOscillator(),lg=audioCtx.createGain();
+  l.type='square';l.frequency.value=lead[step%lead.length];
+  lg.gain.setValueAtTime(.0001,t);
+  lg.gain.exponentialRampToValueAtTime(.075,t+.006);
+  lg.gain.exponentialRampToValueAtTime(.0001,t+.13);
+  l.connect(lg).connect(master);l.start(t);l.stop(t+.15);
+
+  musicStep++;
  };
- tick(); musicTimer=setInterval(tick,220);
+ tick();
+ musicTimer=setInterval(tick,125);
 }
 function toggleMusic(){
  if(!audioCtx)startMusic();
  musicOn=!musicOn;
- if(musicGain)musicGain.gain.setTargetAtTime(musicOn?.075:0,audioCtx.currentTime,.03);
+ if(musicGain)musicGain.gain.setTargetAtTime(
+   musicOn?(Number(document.getElementById('volume').value)/100)*.42:0,
+   audioCtx.currentTime,.025
+ );
  document.getElementById('music').textContent=musicOn?'🔊 MUSIC':'🔇 MUTED';
 }
-
 function start(){
  document.getElementById('menu').style.display='none';
  document.getElementById('dead').style.display='none';
@@ -200,7 +248,7 @@ function start(){
 document.getElementById('play').onclick=start;
 document.getElementById('music').onclick=toggleMusic;
 document.getElementById('volume').addEventListener('input',e=>{
- if(musicGain&&musicOn)musicGain.gain.setTargetAtTime(Number(e.target.value)/100*.22,audioCtx.currentTime,.03);
+ if(musicGain&&musicOn)musicGain.gain.setTargetAtTime(Number(e.target.value)/100*.42,audioCtx.currentTime,.03);
 });
 document.getElementById('zoom').addEventListener('input',e=>{
  camera.userData.height=Number(e.target.value);
