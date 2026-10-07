@@ -1,462 +1,191 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
+<meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Slither X</title>
 <meta name="twitter:card" content="player">
 <meta name="twitter:title" content="Slither X">
-<meta name="twitter:description" content="Battle bots, grow your snake and climb the leaderboard.">
+<meta name="twitter:description" content="Grow your snake, battle bots and climb the leaderboard.">
 <meta name="twitter:player" content="https://slither-on-x.vercel.app/">
 <meta name="twitter:player:width" content="720">
 <meta name="twitter:player:height" content="405">
-<title>Slither X</title>
 <style>
-*{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#070b14;color:#fff;font-family:Inter,Arial,sans-serif}
-#game{position:fixed;inset:0}
-#menu{position:fixed;inset:0;z-index:10;display:flex;align-items:center;justify-content:center;background:radial-gradient(circle at 50% 42%,#182341,#070b14 58%,#02040a)}
-.panel{width:min(430px,92vw);padding:30px;border:1px solid #ffffff1c;border-radius:24px;background:#091020ee;box-shadow:0 25px 90px #000b;text-align:center}
-h1{font-size:46px;line-height:1;margin:0 0 9px;letter-spacing:-3px}
-.sub{color:#9da9c0;margin:0 0 23px}
-input[type=text]{width:100%;padding:14px 15px;border:1px solid #33405b;border-radius:12px;background:#10192b;color:#fff;font-size:16px;outline:none}
-.colorrow{display:flex;gap:10px;margin-top:10px}
-input[type=color]{width:60px;height:48px;padding:4px;border:1px solid #33405b;border-radius:12px;background:#10192b}
-button{border:0;border-radius:12px;background:#fff;color:#080b14;font-weight:800;font-size:16px;cursor:pointer}
-#play{flex:1}
-#hud{position:fixed;left:16px;top:16px;z-index:5;display:none;min-width:145px;padding:12px 15px;border:1px solid #ffffff1c;border-radius:14px;background:#07101ddf;backdrop-filter:blur(8px)}
-#hud .big{font-size:20px;font-weight:900}
-#leader{position:fixed;right:16px;top:16px;z-index:5;display:none;width:210px;padding:13px;border:1px solid #ffffff1c;border-radius:15px;background:#07101ddf;backdrop-filter:blur(8px)}
-#leader h3{margin:0 0 9px;font-size:15px;letter-spacing:.5px}
-.row{display:flex;gap:7px;align-items:center;padding:5px 0;font-size:13px}
-.rank{width:20px;color:#8792a8}.dot{width:9px;height:9px;border-radius:50%;flex:none}.nm{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.len{color:#aab4c8}
-#tip{position:fixed;left:50%;bottom:17px;transform:translateX(-50%);z-index:5;padding:8px 13px;border:1px solid #ffffff14;border-radius:999px;background:#07101dcc;color:#aab4c8;font-size:12px;white-space:nowrap}
-#boost{position:fixed;right:22px;bottom:22px;z-index:6;display:none;width:82px;height:82px;border-radius:50%;border:1px solid #ffffff35;background:#ffffff18;color:#fff}
-#music{position:fixed;right:16px;bottom:116px;z-index:6;display:none;padding:10px 13px;border:1px solid #ffffff25;border-radius:12px;background:#07101ddd;color:#fff;font-weight:800;cursor:pointer}
-#dead{position:fixed;inset:0;z-index:9;display:none;align-items:center;justify-content:center;background:#0009}
-.deadbox{padding:28px 35px;text-align:center;border:1px solid #ffffff20;border-radius:20px;background:#091020f2}.deadbox h2{margin:0 0 7px;font-size:32px}.deadbox p{color:#aab4c8}.deadbox button{padding:12px 22px}
-@media(max-width:650px){#leader{width:175px}.tip{display:none}#tip{font-size:11px}.panel{padding:25px}}
+*{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#05070c;color:#fff;font-family:Arial,sans-serif}
+#game{position:fixed;inset:0;width:100%;height:100%;display:block;background:radial-gradient(circle at 50% 45%,#111a2a 0,#060910 58%,#020307 100%)}
+#hud{position:fixed;inset:0;pointer-events:none}.panel{pointer-events:auto;background:rgba(8,11,19,.82);border:1px solid rgba(255,255,255,.12);border-radius:14px;backdrop-filter:blur(10px);box-shadow:0 12px 40px #0008}
+#top{position:absolute;top:14px;left:14px;padding:10px 14px;font-weight:700}.small{font-size:12px;opacity:.65;font-weight:500}
+#board{position:absolute;top:14px;right:14px;padding:12px 16px;min-width:180px}.row{display:flex;justify-content:space-between;gap:18px;font-size:13px;margin:4px 0}
+#controls{position:absolute;left:14px;bottom:14px;padding:10px 12px;font-size:12px}
+#start{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,.45)}
+.card{width:min(430px,calc(100% - 28px));padding:26px;text-align:center}.card h1{margin:0 0 6px;font-size:42px}.card p{opacity:.7;margin:0 0 20px}
+input,button{font:inherit}input[type=text]{width:100%;padding:12px;border-radius:10px;border:1px solid #ffffff22;background:#ffffff0c;color:#fff;margin-bottom:12px}
+button{border:0;border-radius:10px;padding:12px 20px;background:#fff;color:#000;font-weight:800;cursor:pointer;width:100%}
+#dead{display:none;position:absolute;inset:0;align-items:center;justify-content:center;background:rgba(0,0,0,.48)}
+#dead .card{display:block}.stat{font-size:18px;margin:10px 0 18px}
+#mute{position:absolute;bottom:14px;right:14px;width:auto;padding:9px 12px;background:#ffffff12;color:#fff;border:1px solid #fff2}
 </style>
 </head>
 <body>
-<div id="game"></div>
-
-<div id="menu">
-  <div class="panel">
-    <h1>SLITHER X</h1>
-    <p class="sub">Eat. Grow. Outplay the bots.</p>
-    <input id="name" type="text" maxlength="14" value="Player" placeholder="Your name">
-    <div class="colorrow">
-      <input id="color" type="color" value="#8b5cf6" aria-label="Snake color">
-      <button id="play">PLAY</button>
-    </div>
-  </div>
-</div>
-
+<canvas id="game"></canvas>
 <div id="hud">
-  <div class="big"><span id="score">0</span> pts</div>
-  <div>Length: <b id="length">12</b></div>
+  <div id="top" class="panel"><div id="score">Length: 12</div><div class="small">WASD / mouse • Hold space to boost</div></div>
+  <div id="board" class="panel"><b>LEADERBOARD</b><div id="leaders"></div></div>
+  <div id="controls" class="panel">Move: mouse / WASD &nbsp; Boost: SPACE</div>
+  <button id="mute">🔊 Sound</button>
+  <div id="start"><div class="card panel">
+    <h1>SLITHER X</h1><p>Grow your snake. Outsmart the bots. Take the #1 spot.</p>
+    <input id="name" maxlength="16" value="Player" placeholder="Your name">
+    <button id="play">PLAY</button>
+  </div></div>
+  <div id="dead"><div class="card panel"><h1>Game Over</h1><div id="final" class="stat"></div><button id="again">PLAY AGAIN</button></div></div>
 </div>
-
-<div id="leader">
-  <h3>🏆 LEADERBOARD</h3>
-  <div id="leaders"></div>
-</div>
-
-<div id="tip">Mouse/WASD to steer • Hold Space or BOOST to accelerate</div>
-<button id="boost">BOOST</button>
-<button id="music" type="button">🔊 MUSIC</button>
-
-<div id="dead">
-  <div class="deadbox">
-    <h2>You Died</h2>
-    <p id="deathtext">The arena got you.</p>
-    <button id="again">PLAY AGAIN</button>
-  </div>
-</div>
-
-<script src="https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.min.js"></script>
 <script>
-const scene=new THREE.Scene();
-scene.background=new THREE.Color(0x070b14);
-const camera=new THREE.PerspectiveCamera(55,innerWidth/innerHeight,.1,2000);
-camera.userData.height=25;
-const renderer=new THREE.WebGLRenderer({antialias:true});
-renderer.setPixelRatio(Math.min(devicePixelRatio,2));
-renderer.setSize(innerWidth,innerHeight);
-document.getElementById('game').appendChild(renderer.domElement);
+(() => {
+'use strict';
+const canvas=document.getElementById('game'),ctx=canvas.getContext('2d');
+const start=document.getElementById('start'),dead=document.getElementById('dead');
+const play=document.getElementById('play'),again=document.getElementById('again');
+const nameInput=document.getElementById('name'),scoreEl=document.getElementById('score'),leadersEl=document.getElementById('leaders'),muteBtn=document.getElementById('mute');
+let W=innerWidth,H=innerHeight,dpr=1;
+function resize(){dpr=Math.min(devicePixelRatio||1,2);W=innerWidth;H=innerHeight;canvas.width=W*dpr;canvas.height=H*dpr;canvas.style.width=W+'px';canvas.style.height=H+'px';ctx.setTransform(dpr,0,0,dpr,0,0)}
+addEventListener('resize',resize);resize();
 
-scene.add(new THREE.HemisphereLight(0xbdd7ff,0x101522,2.1));
-const sun=new THREE.DirectionalLight(0xffffff,2.4);sun.position.set(30,50,15);scene.add(sun);
+const WORLD=4200, foods=[], snakes=[]; let player=null,running=false,last=0,mouse={x:W/2,y:H/2},keys={};
+const colors=['#7c3aed','#22d3ee','#f43f5e','#f59e0b','#10b981','#e879f9','#60a5fa','#fb7185','#a3e635','#38bdf8','#f97316','#c084fc','#2dd4bf','#facc15'];
 
-const arenaSize=440;
-const grid=new THREE.GridHelper(arenaSize*2,88,0x27324a,0x111827);
-grid.position.y=-1.15;scene.add(grid);
-const floor=new THREE.Mesh(new THREE.CircleGeometry(arenaSize,100),
- new THREE.MeshStandardMaterial({color:0x08101e,roughness:1,metalness:0}));
-floor.rotation.x=-Math.PI/2;floor.position.y=-1.2;scene.add(floor);
-
-const food=[];
-const snakes=[];
-let player=null,running=false,score=0;
-let mx=1,mz=0;
-const keys={};
+addEventListener('mousemove',e=>{mouse.x=e.clientX;mouse.y=e.clientY});
+addEventListener('keydown',e=>{keys[e.key.toLowerCase()]=true;if(e.code==='Space')e.preventDefault()});
+addEventListener('keyup',e=>{keys[e.key.toLowerCase()]=false});
 
 function rand(a,b){return a+Math.random()*(b-a)}
-function randomColor(i){
- const c=new THREE.Color();
- c.setHSL((i*.137)%1,.78,.58); return c.getHex();
+function dist(a,b){return Math.hypot(a.x-b.x,a.y-b.y)}
+function makeSnake(name,x,y,color,isPlayer=false){
+  const s={name,x,y,color,isPlayer,angle:rand(0,Math.PI*2),speed:150,r:11,body:[],target:rand(0,Math.PI*2),boost:false,alive:true};
+  for(let i=0;i<12;i++)s.body.push({x:x-Math.cos(s.angle)*i*9,y:y-Math.sin(s.angle)*i*9});
+  return s;
 }
-function addFood(){
- const g=new THREE.SphereGeometry(.48,9,8);
- const m=new THREE.MeshStandardMaterial({
-   color:new THREE.Color().setHSL(Math.random(),.85,.62),
-   emissive:0x202020
- });
- const f=new THREE.Mesh(g,m);
- f.position.set(rand(-arenaSize+10,arenaSize-10),0,rand(-arenaSize+10,arenaSize-10));
- f.userData.value=10;
- scene.add(f);food.push(f);
-}
-for(let i=0;i<420;i++)addFood();
-
-function makeSnake(name,color,isPlayer=false,index=0){
- const s={
-  name,color,isPlayer,parts:[],dir:new THREE.Vector3(1,0,0),
-  target:new THREE.Vector3(1,0,0),speed:isPlayer?7.2:5.2,
-  boost:false,dead:false,score:isPlayer?0:Math.floor(rand(40,450)),
-  aiTimer:0,aiDir:new THREE.Vector3(1,0,0)
- };
- const count=isPlayer?12:Math.min(34,8+Math.floor(s.score/45));
- const startX=isPlayer?0:rand(-300,300),startZ=isPlayer?0:rand(-300,300);
- for(let i=0;i<count;i++){
-  const geo=new THREE.SphereGeometry(.86,18,12);
-  const mat=new THREE.MeshStandardMaterial({color,roughness:.72});
-  const mesh=new THREE.Mesh(geo,mat);
-  const taper=Math.max(.48,1-i/(count*1.25));
-  mesh.scale.set((i===0?1.35:1.03)*taper,(i===0?1.08:.94)*taper,(i===0?1.48:1.02)*taper);
-  mesh.position.set(startX-i*.78,0,startZ);
-  scene.add(mesh);s.parts.push(mesh);
- }
- s.head=s.parts[0];s.head.scale.setScalar(1.12);
- snakes.push(s);return s;
-}
-
-const botNames=["Nova","Vex","Ghost","Mango","Orbit","Pixel","Zed","Byte","Ace","Rogue","Blitz","Nexus","Karma","Venom","Drift","Zero","Flux","Titan","Luna","Echo"];
-
-
-let musicOn=true;
-let audioCtx=null,musicGain=null,musicTimer=null,musicStep=0;
-const bass=[55,55,65.41,73.42,65.41,55,82.41,73.42];
-const chords=[[220,277.18,329.63],[196,246.94,293.66],[174.61,220,261.63],[196,246.94,329.63]];
-const lead=[440,523.25,659.25,587.33,523.25,440,392,523.25];
-function startMusic(){
- if(audioCtx){if(audioCtx.state==='suspended')audioCtx.resume();return}
- audioCtx=new(window.AudioContext||window.webkitAudioContext)();
-
- const master=audioCtx.createGain();
- master.gain.value=.42;
- master.connect(audioCtx.destination);
- musicGain=master;
-
- const compressor=audioCtx.createDynamicsCompressor();
- compressor.threshold.value=-18;
- compressor.knee.value=12;
- compressor.ratio.value=5;
- compressor.attack.value=.003;
- compressor.release.value=.12;
- master.disconnect();
- master.connect(compressor);
- compressor.connect(audioCtx.destination);
-
- const tick=()=>{
-  const t=audioCtx.currentTime;
-  const step=musicStep%16;
-
-  // Four-on-the-floor kick
-  if(step%4===0){
-   const k=audioCtx.createOscillator(),kg=audioCtx.createGain();
-   k.type='sine';
-   k.frequency.setValueAtTime(145,t);
-   k.frequency.exponentialRampToValueAtTime(45,t+.16);
-   kg.gain.setValueAtTime(.9,t);
-   kg.gain.exponentialRampToValueAtTime(.0001,t+.19);
-   k.connect(kg).connect(master);k.start(t);k.stop(t+.2);
+function reset(){
+  snakes.length=0;foods.length=0;
+  player=makeSnake((nameInput.value.trim()||'Player').slice(0,16),WORLD/2,WORLD/2,colors[0],true);
+  snakes.push(player);
+  for(let i=0;i<14;i++){
+    let s=makeSnake('Bot '+(i+1),rand(300,WORLD-300),rand(300,WORLD-300),colors[(i+1)%colors.length]);
+    snakes.push(s);
   }
-
-  // Off-beat bass
-  if(step%2===0){
-   const b=audioCtx.createOscillator(),bg=audioCtx.createGain();
-   b.type='sawtooth';b.frequency.value=bass[(step/2)%bass.length];
-   bg.gain.setValueAtTime(.0001,t);
-   bg.gain.exponentialRampToValueAtTime(.28,t+.01);
-   bg.gain.exponentialRampToValueAtTime(.0001,t+.25);
-   b.connect(bg).connect(master);b.start(t);b.stop(t+.27);
+  for(let i=0;i<650;i++)spawnFood(rand(80,WORLD-80),rand(80,WORLD-80));
+  running=true;start.style.display='none';dead.style.display='none';last=performance.now();requestAnimationFrame(loop);
+}
+function spawnFood(x,y){foods.push({x,y,r:rand(3,6),color:colors[Math.floor(rand(0,colors.length))]})}
+function dropFood(s){for(let i=0;i<Math.min(30,Math.floor(s.body.length/2));i++)spawnFood(s.body[i].x+rand(-25,25),s.body[i].y+rand(-25,25))}
+function steer(s,dt){
+  if(s.isPlayer){
+    let dx=mouse.x-W/2,dy=mouse.y-H/2;
+    if(Math.abs(dx)+Math.abs(dy)>12)s.target=Math.atan2(dy,dx);
+    if(keys['w']||keys['arrowup'])s.target=-Math.PI/2;
+    if(keys['s']||keys['arrowdown'])s.target=Math.PI/2;
+    if(keys['a']||keys['arrowleft'])s.target=Math.PI;
+    if(keys['d']||keys['arrowright'])s.target=0;
+    s.boost=keys[' ']||keys['space'];
+  }else{
+    if(Math.random()<.015)s.target+=rand(-1.3,1.3);
+    const margin=500;
+    if(s.x<margin)s.target=rand(-.5,.5); if(s.x>WORLD-margin)s.target=rand(2.6,3.7);
+    if(s.y<margin)s.target=rand(.2,2.9); if(s.y>WORLD-margin)s.target=rand(-2.9,-.2);
+    s.boost=false;
   }
-
-  // Chord stab
-  if(step%4===2){
-   for(const freq of chords[Math.floor(musicStep/4)%chords.length]){
-    const c=audioCtx.createOscillator(),cg=audioCtx.createGain();
-    c.type='sawtooth';c.frequency.value=freq;
-    cg.gain.setValueAtTime(.0001,t);
-    cg.gain.exponentialRampToValueAtTime(.045,t+.008);
-    cg.gain.exponentialRampToValueAtTime(.0001,t+.23);
-    c.connect(cg).connect(master);c.start(t);c.stop(t+.25);
-   }
-  }
-
-  // Bright hook
-  const l=audioCtx.createOscillator(),lg=audioCtx.createGain();
-  l.type='square';l.frequency.value=lead[step%lead.length];
-  lg.gain.setValueAtTime(.0001,t);
-  lg.gain.exponentialRampToValueAtTime(.075,t+.006);
-  lg.gain.exponentialRampToValueAtTime(.0001,t+.13);
-  l.connect(lg).connect(master);l.start(t);l.stop(t+.15);
-
-  musicStep++;
- };
- tick();
- musicTimer=setInterval(tick,125);
+  let diff=Math.atan2(Math.sin(s.target-s.angle),Math.cos(s.target-s.angle));
+  s.angle+=Math.max(-3.2*dt,Math.min(3.2*dt,diff));
+  const sp=s.speed*(s.boost?1.55:1);
+  s.x=Math.max(35,Math.min(WORLD-35,s.x+Math.cos(s.angle)*sp*dt));
+  s.y=Math.max(35,Math.min(WORLD-35,s.y+Math.sin(s.angle)*sp*dt));
+  const head={x:s.x,y:s.y}; s.body.unshift(head);
+  const wanted=12+s.body.length*0.0; let maxLen=12+Math.floor(s.body.length/100);
+  if(s.boost && s.body.length>14 && Math.random()<.12){s.body.pop();spawnFood(s.x+rand(-8,8),s.y+rand(-8,8))}
+  while(s.body.length<maxLen) s.body.push({x:s.body[s.body.length-1].x,y:s.body[s.body.length-1].y});
+  while(s.body.length>maxLen)s.body.pop();
 }
-function toggleMusic(){
- if(!audioCtx)startMusic();
- musicOn=!musicOn;
- if(musicGain)musicGain.gain.setTargetAtTime(
-   musicOn?(Number(document.getElementById('volume').value)/100)*.42:0,
-   audioCtx.currentTime,.025
- );
- document.getElementById('music').textContent=musicOn?'🔊 MUSIC':'🔇 MUTED';
-}
-function start(){
- document.getElementById('menu').style.display='none';
- document.getElementById('dead').style.display='none';
- document.getElementById('hud').style.display='block';
- document.getElementById('leader').style.display='block';
- document.getElementById('boost').style.display='block';
- document.getElementById('music').style.display='block';
- startMusic();
- score=0;
- player=makeSnake(
-   document.getElementById('name').value.trim()||'Player',
-   document.getElementById('color').value,true
- );
- for(let i=0;i<14;i++){
-   let n=botNames[i%botNames.length]+(i>=botNames.length?i+1:"");
-   makeSnake(n,randomColor(i+2),false,i);
- }
- running=true;updateHUD();
-}
-document.getElementById('play').onclick=start;
-document.getElementById('music').onclick=toggleMusic;
-document.getElementById('again').onclick=()=>location.reload();
-document.getElementById('name').addEventListener('keydown',e=>{if(e.key==='Enter')start()});
-
-addEventListener('mousemove',e=>{
- const x=e.clientX/innerWidth-.5,z=e.clientY/innerHeight-.5;
- if(Math.hypot(x,z)>.04){mx=x;mz=z}
-});
-addEventListener('keydown',e=>{
- keys[e.key.toLowerCase()]=true;
- if(e.code==='Space'&&player)player.boost=true;
-});
-addEventListener('keyup',e=>{
- keys[e.key.toLowerCase()]=false;
- if(e.code==='Space'&&player)player.boost=false;
-});
-const boost=document.getElementById('boost');
-boost.addEventListener('pointerdown',()=>{if(player)player.boost=true});
-boost.addEventListener('pointerup',()=>{if(player)player.boost=false});
-boost.addEventListener('pointercancel',()=>{if(player)player.boost=false});
-
-function playerSteer(s,dt){
- let x=mx,z=mz;
- if(keys.w||keys.arrowup)z=-1;
- if(keys.s||keys.arrowdown)z=1;
- if(keys.a||keys.arrowleft)x=-1;
- if(keys.d||keys.arrowright)x=1;
- const v=new THREE.Vector3(x,0,z);
- if(v.lengthSq()>.015){v.normalize();s.target.lerp(v,.25)}
- s.dir.lerp(s.target,Math.min(1,dt*7)).normalize();
-}
-
-function aiSteer(s,dt){
- s.aiTimer-=dt;
- const p=s.head.position;
- if(Math.abs(p.x)>arenaSize-45||Math.abs(p.z)>arenaSize-45){
-   s.aiDir.set(-p.x,0,-p.z).normalize();
-   s.aiTimer=1;
- } else if(s.aiTimer<=0){
-   // Bots generally seek nearby food, but sometimes roam.
-   let best=null,bestD=95;
-   for(let i=0;i<food.length;i++){
-     const d=p.distanceToSquared(food[i].position);
-     if(d<bestD*bestD){best=food[i];bestD=Math.sqrt(d)}
-   }
-   if(best)s.aiDir.copy(best.position).sub(p).setY(0).normalize();
-   else s.aiDir.set(rand(-1,1),0,rand(-1,1)).normalize();
-   s.aiTimer=rand(.7,2.2);
- }
- // Avoid other heads/bodies at close range.
- for(const o of snakes){
-   if(o===s||o.dead)continue;
-   const d=p.distanceTo(o.head.position);
-   if(d<14){
-     const away=p.clone().sub(o.head.position).setY(0);
-     if(away.lengthSq()>0)s.aiDir.lerp(away.normalize(),.45);
-   }
- }
- s.target.lerp(s.aiDir,.08);
- s.dir.lerp(s.target,Math.min(1,dt*3.5)).normalize();
-}
-
-function updateSnake(s,dt){
- if(s.dead)return;
- if(s.isPlayer)playerSteer(s,dt);else aiSteer(s,dt);
- const sp=s.speed*(s.boost?1.65:1);
- s.head.position.addScaledVector(s.dir,sp*dt);
- s.head.position.y=0;
- s.head.rotation.y=Math.atan2(s.dir.x,s.dir.z);
-  if(s.eyes){for(const eye of s.eyes)eye.position.y=.42;}
-
- for(let i=1;i<s.parts.length;i++){
-   const a=s.parts[i-1],b=s.parts[i];
-   const d=a.position.distanceTo(b.position);
-   const desired=.78;
-   if(d>desired)b.position.lerp(a.position,Math.min(1,(d-desired)*dt*16));
- }
-}
-
-function grow(s,n=1){
- for(let k=0;k<n;k++){
-  const tail=s.parts[s.parts.length-1];
-  const geo=new THREE.SphereGeometry(.86,14,11);
-  const mat=new THREE.MeshStandardMaterial({color:s.color});
-  const part=new THREE.Mesh(geo,mat);
-  part.position.copy(tail.position);
-  scene.add(part);s.parts.push(part);
- }
-}
-
-function eatFood(s){
- for(let i=food.length-1;i>=0;i--){
-  if(s.head.position.distanceTo(food[i].position)<2.25){
-   scene.remove(food[i]);food.splice(i,1);addFood();
-   s.score+=10;
-   if(s.score%40===0)grow(s,1);
-  }
- }
-}
-
-function killSnake(s){
- if(s.dead)return;
- s.dead=true;
- for(const part of s.parts){
-   // Convert a portion of the defeated snake into food.
-   if(Math.random()<.7){
-    const g=new THREE.SphereGeometry(.55,9,8);
-    const m=new THREE.MeshStandardMaterial({color:s.color,emissive:0x161616});
-    const f=new THREE.Mesh(g,m);f.position.copy(part.position);f.userData.value=20;
-    scene.add(f);food.push(f);
-   }
-   scene.remove(part);
- }
- s.parts.length=0;
- if(s===player){
-   document.getElementById('deathtext').textContent='You finished with '+score+' points.';
-   document.getElementById('dead').style.display='flex';
-   running=false;
- }
-}
-
-function bodyCollisions(){
- for(const a of snakes){
-  if(a.dead)continue;
-
-  // Own head touching the body = death.
-  for(let j=7;j<a.parts.length;j++){
-   if(a.head.position.distanceToSquared(a.parts[j].position)<1.45*1.45){
-    killSnake(a);break;
-   }
-  }
-  if(a.dead)continue;
-
-  // Head touching another snake's body = death.
-  for(const b of snakes){
-   if(a===b||b.dead)continue;
-   for(let j=3;j<b.parts.length;j++){
-    if(a.head.position.distanceToSquared(b.parts[j].position)<1.55*1.55){
-     killSnake(a);break;
+function collisions(){
+  for(const s of snakes)if(s.alive){
+    for(let i=0;i<foods.length;i++)if(dist(s,foods[i])<s.r+foods[i].r+5){
+      foods.splice(i,1);i--;s.body.push({x:s.body.at(-1).x,y:s.body.at(-1).y});spawnFood(rand(80,WORLD-80),rand(80,WORLD-80));
     }
-   }
-   if(a.dead)break;
+    // self collision
+    for(let i=14;i<s.body.length;i++)if(dist(s.body[0],s.body[i])<s.r*1.35){kill(s);break}
+    if(!s.alive)continue;
+    for(const o of snakes)if(o!==s&&o.alive){
+      for(let i=3;i<o.body.length;i++)if(dist(s.body[0],o.body[i])<s.r*1.25){kill(s);break}
+      if(!s.alive)break;
+    }
   }
- }
 }
+function kill(s){
+  if(!s.alive)return;s.alive=false;dropFood(s);
+  if(s.isPlayer){
+    running=false;document.getElementById('final').textContent='Length: '+s.body.length;
+    dead.style.display='flex';
+  }
+}
+function updateBoard(){
+  const arr=snakes.filter(s=>s.alive).sort((a,b)=>b.body.length-a.body.length).slice(0,8);
+  leadersEl.innerHTML=arr.map((s,i)=>'<div class="row"><span>'+ (i+1)+'. '+esc(s.name)+'</span><b>'+s.body.length+'</b></div>').join('');
+  scoreEl.textContent='Length: '+(player?.body.length||0);
+}
+function esc(x){return x.replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]))}
+function draw(){
+  ctx.clearRect(0,0,W,H);
+  const camX=player?player.x:WORLD/2,camY=player?player.y:WORLD/2;
+  const zoom=Math.min(W,H)/900;
+  ctx.save();ctx.translate(W/2,H/2);ctx.scale(zoom,zoom);ctx.translate(-camX,-camY);
+  // arena
+  ctx.fillStyle='#080d16';ctx.fillRect(0,0,WORLD,WORLD);
+  ctx.strokeStyle='#26324a';ctx.lineWidth=10;ctx.strokeRect(20,20,WORLD-40,WORLD-40);
+  ctx.strokeStyle='#111b2c';ctx.lineWidth=1;
+  for(let x=0;x<=WORLD;x+=140){ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,WORLD);ctx.stroke()}
+  for(let y=0;y<=WORLD;y+=140){ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(WORLD,y);ctx.stroke()}
+  for(const f of foods){ctx.beginPath();ctx.fillStyle=f.color;ctx.shadowBlur=12;ctx.shadowColor=f.color;ctx.arc(f.x,f.y,f.r,0,Math.PI*2);ctx.fill();ctx.shadowBlur=0}
+  for(const s of snakes.filter(x=>x.alive)){
+    for(let i=s.body.length-1;i>=0;i--){
+      const p=s.body[i],t=i/(s.body.length||1),r=s.r*(.72+.28*(1-t));
+      ctx.beginPath();ctx.fillStyle=s.color;ctx.globalAlpha=.55+.45*(1-t);ctx.arc(p.x,p.y,r,0,Math.PI*2);ctx.fill();
+    }
+    ctx.globalAlpha=1;
+    const h=s.body[0];ctx.beginPath();ctx.fillStyle=s.color;ctx.arc(h.x,h.y,s.r+2,0,Math.PI*2);ctx.fill();
+    const side=0.42,ex=s.r*.43,ey=s.r*.35;
+    for(const q of [-1,1]){
+      const exx=h.x+Math.cos(s.angle+q*side)*ex, eyy=h.y+Math.sin(s.angle+q*side)*ex;
+      ctx.beginPath();ctx.fillStyle='#fff';ctx.arc(exx,eyy,3.2,0,Math.PI*2);ctx.fill();
+      ctx.beginPath();ctx.fillStyle='#111';ctx.arc(exx+Math.cos(s.angle)*1.2,eyy+Math.sin(s.angle)*1.2,1.6,0,Math.PI*2);ctx.fill();
+    }
+  }
+  ctx.restore();
+}
+function loop(now){
+  if(!running)return; const dt=Math.min(.033,(now-last)/1000);last=now;
+  for(const s of snakes)if(s.alive)steer(s,dt);
+  collisions();updateBoard();draw();requestAnimationFrame(loop);
+}
+function startGame(){initAudio();reset()}
+play.onclick=startGame;again.onclick=reset;
 
-function wallCollisions(){
- for(const s of snakes){
-  if(!s.dead && (Math.abs(s.head.position.x)>arenaSize||Math.abs(s.head.position.z)>arenaSize))killSnake(s);
- }
+// tiny WebAudio synth: no external audio files, so it can never block game loading
+let audioCtx=null,muted=false,timer=null;
+function initAudio(){
+  if(audioCtx){audioCtx.resume();return}
+  try{
+    audioCtx=new (window.AudioContext||window.webkitAudioContext)();
+    let next=0,step=0;
+    const gain=audioCtx.createGain();gain.gain.value=.045;gain.connect(audioCtx.destination);
+    timer=setInterval(()=>{
+      if(!audioCtx||muted)return;
+      const now=audioCtx.currentTime;
+      const o=audioCtx.createOscillator(),g=audioCtx.createGain();
+      o.type='sawtooth';o.frequency.value=step%4===0?110:55;g.gain.setValueAtTime(.0001,now);g.gain.exponentialRampToValueAtTime(.12,now+.01);g.gain.exponentialRampToValueAtTime(.0001,now+.11);o.connect(g).connect(gain);o.start(now);o.stop(now+.12);step++;
+    },125);
+  }catch(e){}
 }
-
-function updateMinimap(){
- const c=document.getElementById('minimap'),ctx=c.getContext('2d');
- ctx.clearRect(0,0,125,125);
- ctx.fillStyle='#09101e';ctx.fillRect(0,0,125,125);
- ctx.strokeStyle='#33405b';ctx.strokeRect(1,1,123,123);
- for(const s of snakes){
-  if(s.dead)continue;
-  const x=62+(s.head.position.x/arenaSize)*58;
-  const y=62+(s.head.position.z/arenaSize)*58;
-  ctx.fillStyle=new THREE.Color(s.color).getStyle();
-  ctx.beginPath();ctx.arc(x,y,s===player?3:2,0,Math.PI*2);ctx.fill();
- }
-}
-let leaderboardClock=0;
-function updateLeaderboard(){
- const alive=snakes.filter(s=>!s.dead).sort((a,b)=>(b.score+b.parts.length*3)-(a.score+a.parts.length*3)).slice(0,10);
- document.getElementById('leaders').innerHTML=alive.map((s,i)=>{
-   const val=s.score+s.parts.length*3;
-   const c=new THREE.Color(s.color).getStyle();
-   const me=s===player?' style="font-weight:900"':'';
-   return '<div class="row"'+me+'><span class="rank">'+(i+1)+'</span><span class="dot" style="background:'+c+'"></span><span class="nm">'+escapeHtml(s.name)+'</span><span class="len">'+val+'</span></div>';
- }).join('');
-}
-function escapeHtml(s){return s.replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[c]))}
-function updateHUD(){
- if(!player)return;
- document.getElementById('score').textContent=score=player.score;
- document.getElementById('length').textContent=player.parts.length;
-}
-
-const clock=new THREE.Clock();
-function animate(){
- requestAnimationFrame(animate);
- const dt=Math.min(clock.getDelta(),.035);
- if(running){
-   for(const s of snakes)updateSnake(s,dt);
-   for(const s of snakes)if(!s.dead)eatFood(s);
-   bodyCollisions();wallCollisions();
-   updateHUD();
-   leaderboardClock-=dt;
-   if(leaderboardClock<=0){updateLeaderboard();updateMinimap();leaderboardClock=.2}
-   if(player&&!player.dead){
-     const p=player.head.position;
-     const h=camera.userData.height||25;
-     const desired=new THREE.Vector3(p.x,h,p.z+h*1.16);
-     camera.position.lerp(desired,1-Math.pow(.001,dt));
-     camera.lookAt(p.x,0,p.z);
-   }
- }else{
-   camera.position.set(0,58,48);camera.lookAt(0,0,0);
- }
- renderer.render(scene,camera);
-}
-animate();
-
-addEventListener('resize',()=>{
- camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();
- renderer.setSize(innerWidth,innerHeight);
-});
+muteBtn.onclick=()=>{muted=!muted;muteBtn.textContent=muted?'🔇 Muted':'🔊 Sound';if(audioCtx)audioCtx.resume()}
+})();
 </script>
 </body>
 </html>
