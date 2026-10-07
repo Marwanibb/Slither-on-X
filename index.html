@@ -6,7 +6,7 @@
 <meta name="twitter:card" content="player">
 <meta name="twitter:title" content="Slither X">
 <meta name="twitter:description" content="Battle bots, grow your snake and climb the leaderboard.">
-<meta name="twitter:player" content="https://YOUR-DOMAIN.vercel.app/">
+<meta name="twitter:player" content="https://slither-on-x.vercel.app/">
 <meta name="twitter:player:width" content="720">
 <meta name="twitter:player:height" content="405">
 <title>Slither X</title>
@@ -247,12 +247,6 @@ function start(){
 }
 document.getElementById('play').onclick=start;
 document.getElementById('music').onclick=toggleMusic;
-document.getElementById('volume').addEventListener('input',e=>{
- if(musicGain&&musicOn)musicGain.gain.setTargetAtTime(Number(e.target.value)/100*.42,audioCtx.currentTime,.03);
-});
-document.getElementById('zoom').addEventListener('input',e=>{
- camera.userData.height=Number(e.target.value);
-});
 document.getElementById('again').onclick=()=>location.reload();
 document.getElementById('name').addEventListener('keydown',e=>{if(e.key==='Enter')start()});
 
