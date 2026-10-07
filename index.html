@@ -78,6 +78,7 @@ button{border:0;border-radius:12px;background:#fff;color:#080b14;font-weight:800
 const scene=new THREE.Scene();
 scene.background=new THREE.Color(0x070b14);
 const camera=new THREE.PerspectiveCamera(55,innerWidth/innerHeight,.1,2000);
+camera.userData.height=25;
 const renderer=new THREE.WebGLRenderer({antialias:true});
 renderer.setPixelRatio(Math.min(devicePixelRatio,2));
 renderer.setSize(innerWidth,innerHeight);
@@ -130,7 +131,8 @@ function makeSnake(name,color,isPlayer=false,index=0){
   const geo=new THREE.SphereGeometry(.86,18,12);
   const mat=new THREE.MeshStandardMaterial({color,roughness:.72});
   const mesh=new THREE.Mesh(geo,mat);
-  mesh.scale.set(i===0?1.18:1, i===0?1.05:0.92, i===0?1.28:0.96);
+  const taper=Math.max(.48,1-i/(count*1.25));
+  mesh.scale.set((i===0?1.35:1.03)*taper,(i===0?1.08:.94)*taper,(i===0?1.48:1.02)*taper);
   mesh.position.set(startX-i*.78,0,startZ);
   scene.add(mesh);s.parts.push(mesh);
  }
@@ -197,6 +199,12 @@ function start(){
 }
 document.getElementById('play').onclick=start;
 document.getElementById('music').onclick=toggleMusic;
+document.getElementById('volume').addEventListener('input',e=>{
+ if(musicGain&&musicOn)musicGain.gain.setTargetAtTime(Number(e.target.value)/100*.22,audioCtx.currentTime,.03);
+});
+document.getElementById('zoom').addEventListener('input',e=>{
+ camera.userData.height=Number(e.target.value);
+});
 document.getElementById('again').onclick=()=>location.reload();
 document.getElementById('name').addEventListener('keydown',e=>{if(e.key==='Enter')start()});
 
@@ -320,7 +328,16 @@ function killSnake(s){
 function bodyCollisions(){
  for(const a of snakes){
   if(a.dead)continue;
-  // Heads hitting another snake's body.
+
+  // Own head touching the body = death.
+  for(let j=7;j<a.parts.length;j++){
+   if(a.head.position.distanceToSquared(a.parts[j].position)<1.45*1.45){
+    killSnake(a);break;
+   }
+  }
+  if(a.dead)continue;
+
+  // Head touching another snake's body = death.
   for(const b of snakes){
    if(a===b||b.dead)continue;
    for(let j=3;j<b.parts.length;j++){
@@ -339,6 +356,19 @@ function wallCollisions(){
  }
 }
 
+function updateMinimap(){
+ const c=document.getElementById('minimap'),ctx=c.getContext('2d');
+ ctx.clearRect(0,0,125,125);
+ ctx.fillStyle='#09101e';ctx.fillRect(0,0,125,125);
+ ctx.strokeStyle='#33405b';ctx.strokeRect(1,1,123,123);
+ for(const s of snakes){
+  if(s.dead)continue;
+  const x=62+(s.head.position.x/arenaSize)*58;
+  const y=62+(s.head.position.z/arenaSize)*58;
+  ctx.fillStyle=new THREE.Color(s.color).getStyle();
+  ctx.beginPath();ctx.arc(x,y,s===player?3:2,0,Math.PI*2);ctx.fill();
+ }
+}
 let leaderboardClock=0;
 function updateLeaderboard(){
  const alive=snakes.filter(s=>!s.dead).sort((a,b)=>(b.score+b.parts.length*3)-(a.score+a.parts.length*3)).slice(0,10);
@@ -366,10 +396,11 @@ function animate(){
    bodyCollisions();wallCollisions();
    updateHUD();
    leaderboardClock-=dt;
-   if(leaderboardClock<=0){updateLeaderboard();leaderboardClock=.2}
+   if(leaderboardClock<=0){updateLeaderboard();updateMinimap();leaderboardClock=.2}
    if(player&&!player.dead){
      const p=player.head.position;
-     const desired=new THREE.Vector3(p.x,25,p.z+29);
+     const h=camera.userData.height||25;
+     const desired=new THREE.Vector3(p.x,h,p.z+h*1.16);
      camera.position.lerp(desired,1-Math.pow(.001,dt));
      camera.lookAt(p.x,0,p.z);
    }
